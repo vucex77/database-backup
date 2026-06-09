@@ -7,6 +7,10 @@ on:
   # Manuel tetiklemek için buton:
   workflow_dispatch:
 
+# GitHub'ın istediği gibi tüm sistemi şimdiden Node.js 24 kullanmaya zorluyoruz (Uyarılardan kurtulmak için)
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: write
 
