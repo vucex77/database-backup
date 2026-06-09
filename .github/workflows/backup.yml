@@ -1,34 +1,36 @@
-name: Railway Database Backup
+name: Railway DB Backup Otomasyonu
 
 on:
   schedule:
+    # Türkiye saati ile her gece 03:00'te çalışır (UTC 00:00)
     - cron: '0 0 * * *'
+  # Manuel tetiklemek için buton:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   backup:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Install PostgreSQL Client
-        run: |
-          sudo apt update
-          sudo apt install postgresql-client -y
+      - name: Depoyu Klonla
+        uses: actions/checkout@v4
 
-      - name: Create Backup
-        env:
-          PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+      - name: PostgreSQL Client Kurulumu
         run: |
-          pg_dump \
-          -h ${{ secrets.DB_HOST }} \
-          -p ${{ secrets.DB_PORT }} \
-          -U ${{ secrets.DB_USER }} \
-          -d ${{ secrets.DB_NAME }} \
-          -F c \
-          -f backup.dump
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      - name: Upload Backup Artifact
-        uses: actions/upload-artifact@v4
+      - name: Veritabanı Yedeğini Al
+        run: |
+          mkdir -p database-backups
+          BACKUP_FILE="database-backups/backup_$(date +'%Y-%m-%d_%H-%M-%S').sql"
+          pg_dump "${{ secrets.RAILWAY_DB_URL }}" > "$BACKUP_FILE"
+
+      - name: Yedeği GitHub'a Commit ve Push Et
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          name: railway-backup
-          path: backup.dump
+          commit_message: "Otomatik Veritabanı Yedeği 💾"
+          branch: main
+          file_pattern: database-backups/*.sql
