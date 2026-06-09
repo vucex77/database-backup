@@ -17,23 +17,14 @@ jobs:
       - name: Depoyu Klonla
         uses: actions/checkout@v4
 
-      # Klasör bağımlılığı olmadan resmi PostgreSQL reposunu doğrudan ekliyoruz
-      - name: PostgreSQL 18 Client Kurulumu
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget gnupg2
-          # GPG anahtarını indiriyoruz
-          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg
-          # Repoyu doğrudan sources.list.d içine yazıyoruz
-          echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-18
+      - name: Klasörü Hazırla
+        run: mkdir -p database-backups
 
-      - name: Veritabanı Yedeğini Al
+      # PostgreSQL'in resmi sürüm uyuşmazlığı yaşamamak için direkt Postgres 18 Docker konteyneri kullanıyoruz
+      - name: Veritabanı Yedeğini Al (Docker)
         run: |
-          mkdir -p database-backups
           BACKUP_FILE="database-backups/backup_$(date +'%Y-%m-%d_%H-%M-%S').sql"
-          pg_dump "${{ secrets.RAILWAY_DB_URL }}" > "$BACKUP_FILE"
+          docker run --rm postgres:18 pg_dump "${{ secrets.RAILWAY_DB_URL }}" > "$BACKUP_FILE"
 
       - name: Yedeği GitHub'a Commit ve Push Et
         uses: stefanzweifel/git-auto-commit-action@v5
